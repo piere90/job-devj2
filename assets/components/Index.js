@@ -4,11 +4,24 @@ import { Button, Rating, Spinner } from 'flowbite-react';
 const Index = props => {
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [sort, setSort] = useState(null);
+  const [order, setOrder] = useState(null);
+  const [selectedGenre, setSelectedGenre] = useState("");
 
   const fetchMovies = () => {
     setLoading(true);
 
-    return fetch('/api/movies')
+    let url = '/api/movies';
+
+    if (sort && order) {
+      url += `?sort=${sort}&order=${order}`;
+    }
+
+    if (selectedGenre !== "") {
+      url += `&genre=${selectedGenre}`;
+    }
+
+    return fetch(url)
       .then(response => response.json())
       .then(data => {
         setMovies(data.movies);
@@ -18,20 +31,114 @@ const Index = props => {
 
   useEffect(() => {
     fetchMovies();
-  }, []);
+  }, [sort, order]);
+
+  const handleSortByRank = () => {
+    setSort('rating');
+    setOrder('desc');
+  };
+
+  const handleSortByDate = () => {
+    setSort('year');
+    setOrder('desc');
+  };
+
+  const handleSortDefault = () => {
+    setSort('year');
+    setOrder('asc');
+  };
 
   return (
     <Layout>
       <Heading />
-
+      <Filters 
+        handleSortByRank={handleSortByRank}
+        handleSortByDate={handleSortByDate}
+        handleSortDefault={handleSortDefault}
+      />
       <MovieList loading={loading}>
-        {movies.map((item, key) => (
+        {movies
+        .filter(movie => selectedGenre === "" || movie.genre === selectedGenre)
+        .map((item, key) => (
           <MovieItem key={key} {...item} />
         ))}
       </MovieList>
     </Layout>
   );
 };
+
+const Filters = props => {
+
+  const handleGenreChange = event => {
+    setSelectedGenre(event.target.value);
+  };
+
+  return (
+    <div className="flex items-center justify-center py-4 md:py-8 flex-wrap">
+      <button
+        type="button"
+        className="text-blue-700 hover:text-white border border-blue-600 bg-white hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 rounded-full text-base font-medium px-5 py-2.5 text-center mr-3 mb-3 dark:border-blue-500 dark:text-blue-500 dark:hover:text-white dark:hover:bg-blue-500 dark:bg-gray-900 dark:focus:ring-blue-800"
+        onClick={props.handleSortDefault}
+      >
+        All films
+      </button>
+      <button
+        type="button"
+        className="text-gray-900 border border-white hover:border-gray-200 dark:border-gray-900 dark:bg-gray-900 dark:hover:border-gray-700 bg-white focus:ring-4 focus:outline-none focus:ring-gray-300 rounded-full text-base font-medium px-5 py-2.5 text-center mr-3 mb-3 dark:text-white dark:focus:ring-gray-800"
+        onClick={props.handleSortByRank}
+      >
+        Top rank
+      </button>
+      <button
+        type="button"
+        className="text-gray-900 border border-white hover:border-gray-200 dark:border-gray-900 dark:bg-gray-900 dark:hover:border-gray-700 bg-white focus:ring-4 focus:outline-none focus:ring-gray-300 rounded-full text-base font-medium px-5 py-2.5 text-center mr-3 mb-3 dark:text-white dark:focus:ring-gray-800"
+        onClick={props.handleSortByDate}
+      >
+        Latest releases
+      </button>
+      <GenreFilter
+        selectedGenre={props.selectedGenre}
+        handleGenreChange={props.handleGenreChange}
+        genres={props.genres}
+      />
+    </div>
+  );
+};
+
+const GenreFilter = props => {
+
+  const [genres, setGenres] = useState([]);
+
+  const fetchGenres = async () => {
+
+    let url = '/api/genres';
+
+    const response = await fetch(url);
+    const data = await response.json();
+    setGenres(data.genres);
+  }
+
+  useEffect(() => {
+    fetchGenres();
+  }, []);
+
+  return (
+    <select
+      value={props.selectedGenre}
+      onChange={props.handleGenreChange}
+      className="text-gray-900 border border-white hover:border-gray-200 dark:border-gray-900 dark:bg-gray-900 dark:hover:border-gray-700 bg-white focus:ring-4 focus:outline-none focus:ring-gray-300 rounded-full text-base font-medium px-5 py-2.5 text-center mr-3 mb-3 dark:text-white dark:focus:ring-gray-800"
+    >
+      {/* <option key="0" value="all_cat">All categories</option> */}
+      {genres.map(item => (
+        <option key={item.id} value={item.value}>
+          {item.value}
+        </option>
+      ))}
+    </select>
+  );
+};
+
+
 
 const Layout = props => {
   return (
