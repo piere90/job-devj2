@@ -38,14 +38,8 @@ class MoviesController extends AbstractController
     }
 
     #[Route('/api/genres')]
-    public function listGenres(Request $request, Connection $db): Response
+    public function listGenres(Connection $db): Response
     {
-
-        //var_dump($request);exit;
-        // Recupera i parametri di query dalla richiesta
-        $genreschooser = $request->query->get('genreschooser');
-        // var_dump($genreschooser);exit;
-        $sortOrder = $request->query->get('order');
 
         $queryBuilder = $db->createQueryBuilder()
             ->select("g.*")
@@ -54,8 +48,6 @@ class MoviesController extends AbstractController
         $rows = $queryBuilder->setMaxResults(50)
                 ->executeQuery()
                 ->fetchAllAssociative();
-
-        //var_dump($rows);exit;
 
         return $this->json([
             "genres" => $rows
